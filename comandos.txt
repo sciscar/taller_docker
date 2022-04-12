@@ -1,0 +1,80 @@
+#desintalar versions antigues de docker
+sudo apt-get remove docker docker-engine docker.io containerd runc
+
+#Actualitze l'índex del paquet apt i instal·le l'última versió de Docker Engine i containerd:
+sudo apt-get update
+sudo apt-get install curl apt-transport-https ca-certificates software-properties-common
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu (lsb_release -cs) stable"
+sudo apt update
+sudo apt-get install docker-ce docker-ce-cli containerd.io
+
+#Llevar l'us de sudo per a docker
+sudo groupadd docker
+sudo gpasswd -a $USER docker
+newgrp docker
+
+#parar tots els contenidors
+sudo docker container stop $(sudo docker ps -a -q)
+#esborrar tots els contenidors
+sudo docker container rm $(sudo docker ps -a -q)
+
+#llancem un contenidor ubuntu
+docker run --name ubu --rm  -it ubuntu /bin/bash
+
+#llancem un contenidor ubuntu en segon pla
+docker run --name ubu --rm  -dit ubuntu
+
+#Conectem en el contenidor
+docker exec -it ubu /bin/bash
+
+
+#llistar images
+docker images
+
+#esborrar image
+docker rmi nom_de_limatge
+
+#crea un volum
+docker volume create wordpress-db 
+
+#borrar un volum
+docker volume rm nom
+
+#llancem un mariadb
+docker run -d --name wordpress-db \
+    --mount source=wordpress-db,target=/var/lib/mysql \
+    -e MYSQL_ROOT_PASSWORD=secret \
+    -e MYSQL_DATABASE=wordpress \
+    -e MYSQL_USER=manager \
+    -e MYSQL_PASSWORD=secret mariadb:10.3.9
+
+#creem el directori on deixarem les dades
+mkdir -p ~/Sites/wordpress/target && cd ~/Sites/wordpress
+
+#arranquem un contenidor wordpress
+docker run -d --name wordpress \
+    --link wordpress-db:mysql \
+    --mount type=bind,source="$(pwd)"/target,target=/var/www/html \
+    -e WORDPRESS_DB_USER=manager \
+    -e WORDPRESS_DB_PASSWORD=secret \
+    -p 8080:80 \
+    wordpress:4.9.8
+
+#aplicacions en contenidors
+mkdir -p  ~/Sites/friendlyhello
+cd ~/Sites/friendlyhello
+
+#llancem la imatge
+docker run --rm -p 4000:80 friendlyhello
+
+
+#creem l'imatge
+docker build -t friendlyhello .
+
+#llancem amb balanceig de carrega
+docker-composer up -d --scale web=5
+
+
+#llancem portainer
+docker container run -d -p 9000:9000 -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer
